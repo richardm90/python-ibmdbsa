@@ -26,7 +26,6 @@ import re
 import codecs
 from sys import version_info
 
-
 class CoerceUnicode(sa_types.TypeDecorator):
     impl = sa_types.Unicode
 
@@ -64,7 +63,7 @@ class BaseReflector(object):
                 name = codecs.decode(name)
         else:
             if version_info[0] < 3:
-                name = unicode(name)
+                name = str(name)
             else:
                 name = str(name)
         return name
@@ -76,7 +75,7 @@ class BaseReflector(object):
         if isinstance(default_schema_name, str):
             default_schema_name = default_schema_name.strip()
         elif version_info[0] < 3:
-            if isinstance(default_schema_name, unicode):
+            if isinstance(default_schema_name, str):
                 default_schema_name = default_schema_name.strip().__str__()
             else:
                 if isinstance(default_schema_name, str):
@@ -614,9 +613,10 @@ class AS400Reflector(BaseReflector):
     def get_schema_names(self, connection, **kw):
         sysschema = self.sys_schemas
         query = sql.select(sysschema.c.schemaname).\
-            where(~sysschema.c.schemaname.like(unicode('Q%'))).\
-            where(~sysschema.c.schemaname.like(unicode('SYS%'))).\
+            where(~sysschema.c.schemaname.like('Q%')).\
+            where(~sysschema.c.schemaname.like('SYS%')).\
             order_by(sysschema.c.schemaname)
+        print(query)
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
 
     # Retrieves a list of table names for a given schema
@@ -624,8 +624,8 @@ class AS400Reflector(BaseReflector):
     def get_table_names(self, connection, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         systbl = self.sys_tables
-        query = not sql.select(systbl.c.tabname).\
-            where(systbl.c.tabtype == unicode('T')).\
+        query = sql.select(systbl.c.tabname).\
+            where(systbl.c.tabtype == 'T').\
             where(systbl.c.tabschema == current_schema).\
             order_by(systbl.c.tabname)
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
@@ -685,9 +685,9 @@ class AS400Reflector(BaseReflector):
             sa_columns.append({
                     'name': self.normalize_name(r[0]),
                     'type': coltype,
-                    'nullable': r[3] == unicode('Y'),
+                    'nullable': r[3] == 'Y',
                     'default': r[2],
-                    'autoincrement': (r[6] == unicode('YES')) and (r[7] != None),
+                    'autoincrement': (r[6] == 'YES') and (r[7] != None),
                     'comment': r[8] or None,
                 })
         return sa_columns
@@ -731,7 +731,7 @@ class AS400Reflector(BaseReflector):
                 syskeyconst.c.conname == sysconst.c.conname,
                 sysconst.c.tabschema == current_schema,
                 sysconst.c.tabname == table_name,
-                sysconst.c.contype == unicode('PRIMARY KEY'))).\
+                sysconst.c.contype == 'PRIMARY KEY')).\
             order_by(syskeyconst.c.colno)
 
         return [self.normalize_name(key[0])
@@ -800,7 +800,7 @@ class AS400Reflector(BaseReflector):
                 indexes[key] = {
                                 'name': self.normalize_name(r[0]),
                                 'column_names': [self.normalize_name(r[2])],
-                                'unique': r[1] == unicode('Y')
+                                'unique': r[1] == 'Y'
                         }
         return [value for key, value in indexes.items()]
 

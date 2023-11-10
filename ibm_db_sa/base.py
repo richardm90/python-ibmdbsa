@@ -714,6 +714,7 @@ class DB2Dialect(default.DefaultDialect):
     def initialize(self, connection):
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
+        self.dbms_name = 'AS'
         DB2Dialect.serverType = self.dbms_name
         super(DB2Dialect, self).initialize(connection)
         # check server type logic here
